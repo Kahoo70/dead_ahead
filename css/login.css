@@ -1,0 +1,108 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace; /* Fuente con estilo clásico */
+    background: url('img/fondo.png') no-repeat center center fixed; /* Fondo con textura */
+    background-size: cover;
+    color: #fff;
+}
+
+#container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 500px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.8); /* Fondo oscuro sólido */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.9); /* Sombra intensa */
+    border: 2px solid rgba(255, 255, 255, 0.1); /* Borde tenue */
+    text-align: center;
+}
+
+.logo img {
+    margin-bottom: 20px; /* Imagen en blanco y negro */
+    opacity: 0.8; /* Efecto de desgaste */
+}
+
+form h1 {
+    font-size: 28px;
+    color: #e0e0e0;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 5px #000; /* Sombra para un efecto más dramático */
+}
+
+form input {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Borde tenue */
+    border-radius: 5px;
+    background: rgba(50, 50, 50, 0.8); /* Fondo oscuro */
+    color: #fff;
+    font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+form input::placeholder {
+    color: #aaa;
+    font-style: italic;
+}
+
+form button {
+    width: 80%;
+    padding: 10px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    background: rgba(107, 255, 3, 0.2); /* Verde tenue */
+    color: #fff;
+    font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+form button:hover {
+    background: rgba(107, 255, 3, 0.5); /* Verde más brillante */
+    transform: scale(1.05); /* Efecto de zoom */
+}
+
+form button:active {
+    transform: scale(0.95); /* Efecto de clic */
+}
+
+table img {
+    width: 100px !important; /* Fuerza el ancho */
+    height: 100px !important; /* Fuerza el alto */
+    object-fit: contain; /* Ajusta la imagen para que no se corte */
+    border-radius: 5px; /* Bordes redondeados */
+}
+
+table td {
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    text-align: center; /* Asegura que el contenido esté centrado */
+}
+
+.image-container {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.image-container img {
+    max-width: 100%;
+    max-height: 100%;
+}

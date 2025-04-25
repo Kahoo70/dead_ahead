@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once('../conex/conex.php');
+include ('../includes/validarsesion.php');
 $conex = new Database;
 $con = $conex->conectar();
 
@@ -9,10 +10,73 @@ $sql_personajes = $con->prepare("SELECT * FROM personajes");
 $sql_personajes->execute();
 $personajes = $sql_personajes->fetchAll(PDO::FETCH_ASSOC);
 
-// Consulta para obtener las rentas (se usará al hacer clic en el botón)
+// Consulta para obtener las rentas
 $sql_rentas = $con->prepare("SELECT * FROM renta");
 $sql_rentas->execute();
 $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
+
+// Procesar la eliminación de un personaje
+if (isset($_GET['eliminar'])) {
+    $id_personaje = $_GET['eliminar'];
+
+    $sql_delete = $con->prepare("DELETE FROM personajes WHERE id_personaje = :id_personaje");
+    $sql_delete->bindParam(':id_personaje', $id_personaje, PDO::PARAM_INT);
+    $sql_delete->execute();
+
+    echo '<script>alert("Personaje eliminado exitosamente."); window.location = "index-super-admin.php";</script>';
+    exit();
+}
+
+// Procesar el formulario de edición de personajes
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editar_personaje'])) {
+    $id_personaje = $_POST['id_personaje'];
+    $nom_personaje = trim($_POST['editar_nom_personaje']);
+    $fuerza = intval($_POST['editar_fuerza']);
+    $foto_ruta = null;
+
+    // Manejo de la foto si se sube una nueva
+    if (isset($_FILES['editar_foto']) && $_FILES['editar_foto']['error'] === UPLOAD_ERR_OK) {
+        $foto_tmp = $_FILES['editar_foto']['tmp_name'];
+        $foto_nombre = basename($_FILES['editar_foto']['name']);
+        $foto_extension = strtolower(pathinfo($foto_nombre, PATHINFO_EXTENSION));
+        $foto_destino = "../img/personajes/" . $foto_nombre;
+
+        // Validar tipo de archivo (solo PNG) y tamaño (máximo 2MB)
+        if ($foto_extension !== 'png') {
+            echo '<script>alert("Solo se permiten imágenes en formato PNG."); window.location = "index-super-admin.php";</script>';
+            exit;
+        }
+
+        if ($_FILES['editar_foto']['size'] > 2 * 1024 * 1024) { // 2MB
+            echo '<script>alert("El tamaño máximo permitido para la imagen es de 2MB."); window.location = "index-super-admin.php";</script>';
+            exit;
+        }
+
+        // Mover la foto al directorio de imágenes
+        if (move_uploaded_file($foto_tmp, $foto_destino)) {
+            $foto_ruta = "img/personajes/" . $foto_nombre;
+        } else {
+            echo '<script>alert("Error al subir la foto."); window.location = "index-super-admin.php";</script>';
+            exit;
+        }
+    }
+
+    // Actualizar el personaje en la base de datos
+    if ($foto_ruta) {
+        $sql_update = $con->prepare("UPDATE personajes SET nom_personaje = :nom_personaje, fuerza = :fuerza, foto = :foto WHERE id_personaje = :id_personaje");
+        $sql_update->bindParam(':foto', $foto_ruta, PDO::PARAM_STR);
+    } else {
+        $sql_update = $con->prepare("UPDATE personajes SET nom_personaje = :nom_personaje, fuerza = :fuerza WHERE id_personaje = :id_personaje");
+    }
+
+    $sql_update->bindParam(':nom_personaje', $nom_personaje, PDO::PARAM_STR);
+    $sql_update->bindParam(':fuerza', $fuerza, PDO::PARAM_INT);
+    $sql_update->bindParam(':id_personaje', $id_personaje, PDO::PARAM_INT);
+    $sql_update->execute();
+
+    echo '<script>alert("Personaje actualizado exitosamente."); window.location = "index-super-admin.php";</script>';
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -59,6 +123,20 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
             background: rgba(107, 255, 3, 0.5);
         }
 
+        .logout-btn {
+            background: rgba(255, 0, 0, 0.7);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 0, 0, 0.9);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -70,7 +148,7 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
         table th, table td {
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 10px;
-            text-align: left;
+            text-align: center;
         }
 
         table th {
@@ -103,6 +181,31 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
             background: rgba(107, 255, 3, 0.5);
         }
 
+        .action-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .action-buttons .edit {
+            background: rgba(0, 123, 255, 0.8);
+            color: #fff;
+        }
+
+        .action-buttons .delete {
+            background: rgba(255, 0, 0, 0.8);
+            color: #fff;
+        }
+
+        .action-buttons .edit:hover {
+            background: rgba(0, 123, 255, 1);
+        }
+
+        .action-buttons .delete:hover {
+            background: rgba(255, 0, 0, 1);
+        }
     </style>
 </head>
 <body>
@@ -111,6 +214,9 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
         <div>
             <button id="show-rentas">Mostrar Rentas</button>
             <button id="create-personaje">Crear Personaje</button>
+            <form action="../includes/salir.php" method="POST" style="display: inline;">
+                <button type="submit" class="logout-btn">Cerrar Sesión</button>
+            </form>
         </div>
     </div>
 
@@ -144,6 +250,7 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
                     <th>Foto</th>
                     <th>Creado Por</th>
                     <th>Fecha de Creación</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -160,6 +267,10 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
                         </td>
                         <td><?= htmlspecialchars($personaje['creado_por']) ?></td>
                         <td><?= htmlspecialchars($personaje['fecha_creado']) ?></td>
+                        <td class="action-buttons">
+                            <button class="edit" onclick="abrirEditarModal(<?= $personaje['id_personaje'] ?>, '<?= htmlspecialchars($personaje['nom_personaje']) ?>', <?= $personaje['fuerza'] ?>)">Editar</button>
+                            <button class="delete" onclick="eliminarPersonaje(<?= $personaje['id_personaje'] ?>)">Eliminar</button>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -202,6 +313,22 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Modal para editar personaje -->
+    <div id="editar-personaje-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 10px; width: 400px; z-index: 1000;">
+        <h2>Editar Personaje</h2>
+        <form action="index-super-admin.php" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="id_personaje" id="editar-id-personaje">
+            <label for="editar_nom_personaje">Nombre:</label>
+            <input type="text" name="editar_nom_personaje" id="editar-nom-personaje" required>
+            <label for="editar_fuerza">Fuerza:</label>
+            <input type="number" name="editar_fuerza" id="editar-fuerza" required>
+            <label for="editar_foto">Actualizar Foto:</label>
+            <input type="file" name="editar_foto" id="editar-foto" accept="image/*">
+            <button type="submit" name="editar_personaje">Actualizar</button>
+            <button type="button" onclick="cerrarEditarModal()">Cancelar</button>
+        </form>
+    </div>
+
     <script>
         // Mostrar/ocultar la tabla de rentas
         document.getElementById('show-rentas').addEventListener('click', function () {
@@ -221,6 +348,23 @@ $rentas = $sql_rentas->fetchAll(PDO::FETCH_ASSOC);
         document.getElementById('close-modal').addEventListener('click', function () {
             document.getElementById('crear-personaje-modal').style.display = 'none';
         });
+
+        function abrirEditarModal(id, nombre, fuerza) {
+            document.getElementById('editar-id-personaje').value = id;
+            document.getElementById('editar-nom-personaje').value = nombre;
+            document.getElementById('editar-fuerza').value = fuerza;
+            document.getElementById('editar-personaje-modal').style.display = 'block';
+        }
+
+        function cerrarEditarModal() {
+            document.getElementById('editar-personaje-modal').style.display = 'none';
+        }
+
+        function eliminarPersonaje(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este personaje?')) {
+                window.location.href = 'index-super-admin.php?eliminar=' + id;
+            }
+        }
     </script>
 </body>
 </html>

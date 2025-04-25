@@ -55,6 +55,11 @@ if ($_SESSION['id_roles'] == 2){
     exit();
 }
 
+if ($_SESSION['id_roles'] == 3){
+    header("location: ../usuario/index-usuario.php");
+    exit();
+}
+
 
     }
     else{
